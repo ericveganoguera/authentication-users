@@ -18,7 +18,7 @@ const saltRounds = 10;
 
 // POST /auth/signup  - Creates a new user in the database
 router.post("/signup", (req, res, next) => {
-  const { email, password, name } = req.body;
+  const { email, password, name, biography, photo, phone } = req.body;
 
   // Check if email or password or name are provided as empty strings
   if (email === "" || password === "" || name === "") {
@@ -58,15 +58,22 @@ router.post("/signup", (req, res, next) => {
 
       // Create the new user in the database
       // We return a pending promise, which allows us to chain another `then`
-      return User.create({ email, password: hashedPassword, name });
+      return User.create({
+        email,
+        password: hashedPassword,
+        name,
+        biography,
+        photo,
+        phone,
+      });
     })
     .then((createdUser) => {
       // Deconstruct the newly created user object to omit the password
       // We should never expose passwords publicly
-      const { email, name, _id } = createdUser;
+      const { email, name, _id, biography, photo, phone } = createdUser;
 
       // Create a new object that doesn't expose the password
-      const user = { email, name, _id };
+      const user = { email, name, _id, biography, photo, phone };
 
       // Send a json response containing the user object
       res.status(201).json({ user: user });
@@ -116,6 +123,32 @@ router.post("/login", (req, res, next) => {
       }
     })
     .catch((err) => next(err)); // In this case, we send error handling to the error handling middleware.
+});
+
+// PUT /auth/update - Update a new user in the database
+router.put("/update", (req, res, next) => {
+  const { email, password, name, biography, photo, phone } = req.body;
+  const user = { email: email };
+
+  name && (user.name = name);
+  if (password) {
+    const salt = bcrypt.genSaltSync(saltRounds);
+    const hashedPassword = bcrypt.hashSync(password, salt);
+    user.password = hashedPassword;
+  }
+  biography && (user.biography = biography);
+  photo && (user.photo = photo);
+  phone && (user.phone = phone);
+
+  User.findOneAndUpdate({email}, user)
+    .then((updatedUser) => {
+      console.log(updatedUser)
+      const { email, name, _id, biography, photo, phone } = updatedUser;
+
+      const userUpdated = { _id, email, name, biography, photo, phone };
+      res.status(201).json({ message: "User updated", userUpdated });
+    })
+    .catch((err) => next(err));
 });
 
 // GET  /auth/verify  -  Used to verify JWT stored on the client
