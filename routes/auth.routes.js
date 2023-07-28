@@ -151,6 +151,17 @@ router.put("/update", (req, res, next) => {
     .catch((err) => next(err));
 });
 
+// GET /auth/user  - Get a user in the database
+router.get("/user",(req,res,next) =>{
+  const { email } = req.params
+
+  User.find(email)
+  .then(foundUser => {
+    res.status(200).json(foundUser)
+  })
+  .catch((err) => next(err));
+})
+
 // GET  /auth/verify  -  Used to verify JWT stored on the client
 router.get("/verify", isAuthenticated, (req, res, next) => {
   // If JWT token is valid the payload gets decoded by the
